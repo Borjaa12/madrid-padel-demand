@@ -1,0 +1,21 @@
+{
+  "fuente": "Ayuntamiento de Madrid. Deportes. Ocupación de unidades deportivas",
+  "licencia_origen": "CC BY 4.0",
+  "archivos_utilizados": [
+    "datos2025.xlsx",
+    "datos2026.xlsx"
+  ],
+  "filas_originales": 3808539,
+  "filas_seleccion_amplia": 612370,
+  "filas_solo_por_uso": 20986,
+  "registros_mantenidos": 612270,
+  "registros_excluidos": 100,
+  "registros_pendientes": 0,
+  "repeticiones_retiradas": 0,
+  "validos": 612270,
+  "errores": 0,
+  "individuales_criterio_amplio": 417661,
+  "individuales_unidad_padel": 401383,
+  "individuales_mantenidos_solo_por_uso": 16278,
+  "nota": "Solo los registros mantenidos pasan a la depuración. Las exclusiones manuales, los pendientes y los duplicados se cuentan por separado. No se imputa cero a fechas sin registros."
+}
