@@ -91,4 +91,17 @@ madrid-padel-demand/
 
 ## Estado del proyecto
 
-**Propuesta inicial · octubre de 2026.** El desarrollo de la aplicación, el pipeline y el modelo está pendiente. Se añadirán las instrucciones de ejecución y la URL pública cuando estén disponibles.
+Se ha completado la preparación de los datos de 2025 y 2026. El
+[notebook de preparación](01_preparacion_padel_multianual.ipynb)
+lee los Excel municipales, identifica los registros de pádel por unidad
+deportiva o uso y aplica las
+[decisiones de revisión manual](Datos/criterios/decisiones_solo_uso.xlsx).
+
+De los 612.370 registros seleccionados, se mantuvieron 612.270 y se
+excluyeron 100. No quedaron casos pendientes. La tabla final de reservas
+individuales contiene 417.661 registros. Los recuentos completos están
+en el [informe de calidad](Datos/procesados/calidad_padel.json).
+
+El siguiente paso es revisar la cobertura por centro y periodo antes de
+calcular los indicadores. Los datos de 2026 utilizados llegan hasta el
+31 de agosto.
