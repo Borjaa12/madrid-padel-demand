@@ -55,7 +55,7 @@ La ausencia de registros no se convertirá automáticamente en cero: se revisar�
 
 ## Tecnología y despliegue previstos
 
-Python, pandas, scikit-learn, Plotly y Streamlit. Se prevé desplegar la aplicación en **Streamlit Community Cloud** desde este repositorio, con datos agregados y previsiones precalculadas.
+Python, pandas, scikit-learn, Plotly y Dash. Se prevé desplegar la aplicación en Dash.
 
 ## Plan de trabajo inicial
 
