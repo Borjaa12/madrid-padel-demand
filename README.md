@@ -89,19 +89,83 @@ madrid-padel-demand/
 └── requirements.txt
 ```
 
+
 ## Estado del proyecto
 
-Se ha completado la preparación de los datos de 2025 y 2026. El
-[notebook de preparación](01_preparacion_padel_multianual.ipynb)
-lee los Excel municipales, identifica los registros de pádel por unidad
-deportiva o uso y aplica las
-[decisiones de revisión manual](Datos/criterios/decisiones_solo_uso.xlsx).
+Se ha completado una primera versión de la preparación de datos
+y del análisis exploratorio de las reservas individuales de pádel
+en centros deportivos municipales de Madrid.
 
-De los 612.370 registros seleccionados, se mantuvieron 612.270 y se
-excluyeron 100. No quedaron casos pendientes. La tabla final de reservas
-individuales contiene 417.661 registros. Los recuentos completos están
-en el [informe de calidad](Datos/procesados/calidad_padel.json).
+El conjunto analizado contiene 417.661 registros, desde el
+2 de enero de 2025 hasta el 31 de agosto de 2026. Tras normalizar
+los nombres, se distinguen 45 centros deportivos.
 
-El siguiente paso es revisar la cobertura por centro y periodo antes de
-calcular los indicadores. Los datos de 2026 utilizados llegan hasta el
-31 de agosto.
+### Trabajo realizado
+
+- Lectura y combinación de los archivos Excel de distintos años.
+- Selección de registros relacionados con pádel por unidad deportiva
+  o por uso.
+- Revisión documentada de los casos seleccionados únicamente por uso.
+- Comprobación de duplicados y validación de fechas y horarios.
+- Normalización de nombres de centros, conservando sus valores originales.
+- Análisis de cobertura por centro, mes y año.
+- Cálculo de tres indicadores:
+  1. Volumen semanal de registros de reservas individuales.
+  2. Media de registros por día de la semana y hora de inicio,
+     considerando las fechas con algún registro individual.
+  3. Variación porcentual respecto a la semana anterior.
+- Generación de gráficos interactivos con Plotly y tablas de resultados.
+
+## Organización del trabajo
+
+- `01_preparacion_padel_multianual.ipynb`: lectura, selección,
+  revisión y validación de los datos.
+- `02_exploracion_y_kpis.ipynb`: normalización de centros,
+  análisis de cobertura, indicadores y visualizaciones.
+
+Los notebooks utilizan las siguientes carpetas:
+
+- `Datos/originales/`: archivos Excel de origen.
+- `Datos/criterios/`: decisiones de revisión manual.
+- `Datos/procesados/`: resultados de la preparación.
+- `Datos/analisis/`: tablas y gráficos de la exploración.
+- `Datos/app/`: datos preparados para la aplicación.
+
+Esta estructura describe el entorno de trabajo; no implica que todos
+los archivos de datos estén incluidos en el repositorio.
+
+## Interpretación y limitaciones
+
+Los indicadores describen reservas registradas, no toda la demanda
+existente ni la demanda no satisfecha.
+
+La ausencia de registros no demuestra que una instalación estuviera
+cerrada o que no hubiera demanda. Asimismo, disponer de registros
+en un periodo no garantiza que la información sea completa.
+
+No se calcula un porcentaje de ocupación porque no se dispone de un
+calendario completo de pistas disponibles, horarios y cierres.
+
+Las comparaciones deben considerar los centros representados y la
+duración de los periodos. Los totales de 2025 y 2026 no son directamente
+comparables: el primer año incluye doce meses y el segundo, ocho.
+
+## Próximos pasos
+
+- [ ] Desarrollar una aplicación Dash con filtros de centro y fechas.
+- [ ] Integrar los indicadores y gráficos en la aplicación.
+- [ ] Centralizar la normalización y los cálculos para facilitar
+      su reutilización.
+- [ ] Preparar un modelo de predicción y compararlo con una referencia
+      sencilla, utilizando una separación temporal de los datos.
+- [ ] Integrar las predicciones y mostrar sus limitaciones.
+- [ ] Desplegar la aplicación en una URL pública.
+- [ ] Completar las instrucciones de ejecución y preparar la exposición.
+
+## Tecnologías
+
+- Python y pandas para la preparación y el análisis.
+- Jupyter Notebook para documentar el proceso.
+- Plotly para las visualizaciones interactivas.
+- Dash para la aplicación web prevista.
+- scikit-learn y joblib para la fase de modelado prevista.
