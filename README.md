@@ -4,9 +4,9 @@
 **Aplicación:** [Abrir Madrid Pádel](https://madrid-padel-demand.onrender.com)  
 **Repositorio:** [Borjaa12/madrid-padel-demand](https://github.com/Borjaa12/madrid-padel-demand)
 
-Aplicación interactiva desarrollada con Dash para explorar los registros de reservas individuales de pádel en centros deportivos municipales de gestión directa de Madrid. Permite estudiar cuándo se juega, cómo evoluciona el uso registrado y cómo cambia la cobertura de los datos.
+He desarrollado Madrid Pádel para explorar los registros de reservas individuales de pádel en centros deportivos municipales de gestión directa de Madrid. Con esta aplicación busco analizar cuándo se juega, cómo evoluciona el uso registrado y qué diferencias aparecen entre centros y periodos.
 
-La primera versión está desplegada en Render. La fase predictiva se desarrolla por separado: el notebook 04 prepara una estimación diaria por centro, una referencia histórica y una evaluación temporal. Las predicciones todavía no están integradas en la aplicación pública.
+La primera versión está desarrollada con Dash y publicada en Render. Actualmente estoy trabajando en la fase predictiva, con una primera estimación diaria por centro y una evaluación temporal frente a una referencia histórica. Las predicciones todavía no están integradas en la aplicación pública.
 
 El proyecto está orientado a gestores deportivos, personal de planificación y personas interesadas en el uso del pádel municipal.
 
@@ -30,13 +30,13 @@ La aplicación pública se ejecuta en Render y no requiere iniciar JupyterHub. E
 4. Comparar un modelo de aprendizaje automático con una referencia histórica mediante evaluación temporal.
 5. Integrar las estimaciones, sus errores y sus limitaciones en una aplicación accesible por URL.
 
-La propuesta inicial contemplaba centro, día y franja horaria. La primera fase predictiva se limita a **centro y día** para comprobar la metodología antes de ampliar el detalle horario. El análisis descriptivo sí conserva la hora de inicio.
+En la propuesta inicial planteé realizar predicciones por centro, día y franja horaria. He decidido empezar por **centro y día** para evaluar una primera versión antes de ampliar el detalle horario. En el análisis descriptivo mantengo la hora de inicio.
 
 ## Datos y procedencia
 
 Fuente: [Deportes. Ocupación de unidades deportivas — Ayuntamiento de Madrid](https://datos.madrid.es/dataset/300086-0-deportes-utilizacion-unidades). Licencia de origen: **CC BY 4.0**.
 
-Los datos publicados contienen usos de unidades deportivas. El proyecto selecciona los relacionados con pádel, revisa los casos identificados solo por la descripción del uso y distingue las reservas individuales de otros tipos de ocupación, como escuelas o temporada.
+He utilizado los datos públicos de uso de unidades deportivas del Ayuntamiento de Madrid. He seleccionado los registros relacionados con pádel y revisado los casos identificados únicamente por la descripción del uso. Para este análisis me he centrado en las reservas individuales, separándolas de otros tipos de ocupación, como escuelas o temporada.
 
 El conjunto utilizado por la aplicación contiene:
 
@@ -55,6 +55,8 @@ Los totales anuales no son directamente comparables: 2025 incluye doce meses y 2
 
 ## Preparación y análisis realizados
 
+Hasta ahora he completado las siguientes tareas:
+
 - Lectura y combinación de hojas mensuales de varios años.
 - Selección por unidad deportiva o uso relacionado con pádel.
 - Revisión documentada de los casos seleccionados únicamente por uso.
@@ -66,7 +68,7 @@ Los totales anuales no son directamente comparables: 2025 incluye doce meses y 2
 - Separación de los cálculos reutilizables en `analisis.py` y de la interfaz en `app.py`.
 - Despliegue de la primera versión de Dash en Render.
 
-No se vuelve a eliminar duplicados sobre el CSV reducido de cuatro columnas: diferentes pistas pueden producir filas iguales después de descartar las columnas originales. Esa comprobación corresponde a la preparación de los datos originales.
+He realizado la revisión de duplicados durante la preparación de los datos originales. No repito esa eliminación sobre el CSV reducido de cuatro columnas, porque registros de pistas distintas pueden parecer iguales al retirar otras columnas.
 
 ## Cómo interpretar los indicadores
 
@@ -78,11 +80,11 @@ No se vuelve a eliminar duplicados sobre el CSV reducido de cuatro columnas: dif
 
 ## Primera fase predictiva: notebook 04
 
-El notebook `04_modelo_predictivo.ipynb` está preparado para ejecutar y revisar el primer experimento. Los resultados y el método elegido deberán documentarse tras esa ejecución; no se atribuye todavía una precisión al modelo en este README.
+He preparado el primer experimento predictivo en `04_modelo_predictivo.ipynb`. La ejecución y revisión de sus resultados es el siguiente paso del proyecto. Añadiré las métricas y el método seleccionado cuando complete esa evaluación.
 
 ### Objetivo y tratamiento de ausencias
 
-Una observación de entrenamiento corresponde a un **centro-día con al menos un registro individual**. Su objetivo es el número de registros de ese día. Las combinaciones sin registros se auditan, pero no se rellenan con cero ni se utilizan como objetivos de evaluación.
+Para esta primera versión he definido cada observación de entrenamiento como un **centro-día con al menos un registro individual**. La variable que quiero estimar es el número de registros de ese día. Revisaré las combinaciones sin registros, pero no las rellenaré con cero ni las utilizaré como objetivos de evaluación.
 
 Por tanto, las estimaciones son **condicionales a que el centro tenga registros ese día**. No predicen la probabilidad de apertura ni el volumen incondicional de todos los días naturales. Esta selección puede producir valores superiores a la media de todos los días, y disponer de algún registro no garantiza cobertura completa.
 
@@ -102,15 +104,15 @@ Por tanto, las estimaciones son **condicionales a que el centro tenga registros 
 | Validación | 04/05/2026–28/06/2026 | Elegir el método por MAE |
 | Prueba final | 29/06/2026–30/08/2026 | Evaluar la elección ya fijada |
 
-Cada lunes se ajustan la referencia y el modelo solo con fechas anteriores y se predicen los siete días siguientes. Las semanas ya terminadas pueden entrar en el entrenamiento de orígenes posteriores, también dentro del bloque de prueba. La selección del método y sus parámetros permanece fijada antes de examinar el test.
+He planteado una evaluación que simula una previsión cada lunes: la referencia y el modelo se ajustan únicamente con fechas anteriores y predicen los siete días siguientes. Las semanas ya terminadas pueden entrar en el entrenamiento de previsiones posteriores, también dentro del bloque de prueba. Mantendré fijados el método seleccionado y sus parámetros antes de examinar los resultados del test.
 
 En cada origen se incluyen centros con al menos 28 días observados en el histórico y 14 en los últimos 56 días. Estos umbrales iniciales indican apoyo histórico, no apertura o cobertura completa. El notebook registra las exclusiones y las combinaciones sin objetivo observable.
 
-Se calcula MAE, RMSE y sesgo global, además del error por centro, semana y horizonte. El método con menor MAE de validación se conserva para la demostración; en caso de empate se elige la referencia. La prueba no se utiliza para cambiar retroactivamente esta elección.
+Compararé los métodos mediante MAE, RMSE y sesgo global, además del error por centro, semana y horizonte. Elegiré el método con menor MAE de validación; en caso de empate, conservaré la referencia. Utilizaré el bloque de prueba para evaluar esa elección, sin cambiarla a partir de sus resultados.
 
 **Disponibilidad de la información:** la evaluación supone que el histórico anterior al origen ya estaba disponible. No reproduce el retraso de publicación mensual de la fuente. Es un experimento retrospectivo, no una prueba de funcionamiento en tiempo real.
 
-El ajuste final usa todo el histórico y genera una demostración para los siete días siguientes a su última fecha. Con el CSV actual, ese intervalo es **01/09/2026–07/09/2026**, no una previsión para la fecha actual. Guarda un paquete `joblib`, metadatos, versiones, predicciones y un informe de conclusiones generado a partir de los resultados.
+Después de la evaluación, el notebook realiza un ajuste final con todo el histórico y genera una demostración para los siete días siguientes a la última fecha disponible. Con el CSV actual, ese intervalo es **01/09/2026–07/09/2026**. Por tanto, se trata de una demostración histórica. El proceso guarda el modelo con `joblib`, sus metadatos, las versiones utilizadas, las predicciones y las conclusiones del experimento.
 
 ## Estructura del proyecto
 
@@ -136,7 +138,7 @@ El ajuste final usa todo el histórico y genera una demostración para los siete
 | `modelos/` | Paquete joblib, metadatos y versiones de entrenamiento |
 | `informes/modelo/` | Gráficos HTML y conclusiones del notebook 04 |
 
-Las carpetas de resultados del modelo se crean al ejecutar el notebook 04. Esta organización incluye archivos del entorno de trabajo; no implica que todos los datos originales o resultados estén publicados en GitHub.
+Las carpetas de resultados del modelo se generan al ejecutar el notebook 04. Esta estructura recoge tanto el código como los datos y resultados de mi entorno de trabajo; no todos los archivos están publicados en GitHub.
 
 ## Ejecutar la aplicación
 
@@ -148,28 +150,28 @@ Desde la carpeta principal del proyecto:
 python -m venv .venv
 ```
 
-Activa el entorno en macOS/Linux con `source .venv/bin/activate`, o en PowerShell con `.venv\Scripts\Activate.ps1`. Después:
+La activación del entorno se realiza con `source .venv/bin/activate` en macOS/Linux o con `.venv\Scripts\Activate.ps1` en PowerShell. A continuación se instalan las dependencias y se inicia la aplicación:
 
 ```bash
 python -m pip install -r requirements.txt
 python app.py
 ```
 
-Abre la dirección que muestra la terminal, normalmente `http://127.0.0.1:8050`. El CSV debe estar en `Datos/app/` y el CSS en `assets/`.
+La aplicación queda disponible en la dirección que muestra la terminal, normalmente `http://127.0.0.1:8050`. El CSV debe estar en `Datos/app/` y el CSS en `assets/`.
 
 ### En JupyterHub de ICAI
 
-Abre `03_iniciar_dash.ipynb` junto a `app.py` y ejecuta sus pasos en orden. El acceso utiliza el proxy del servidor personal de JupyterHub, que debe estar instalado y habilitado en ese entorno. Ese enlace depende de la sesión de ICAI; el enlace público del proyecto es el de Render.
+He incluido `03_iniciar_dash.ipynb` para iniciar la aplicación desde JupyterHub de ICAI. Se ejecuta desde la misma carpeta que `app.py` y utiliza el proxy del servidor personal, que debe estar instalado y habilitado. Ese acceso depende de la sesión de ICAI; la versión pública está alojada en Render.
 
 ### Para ejecutar el notebook 04
 
-Parte del mismo CSV de la aplicación. Si faltan las dependencias de modelado, instala desde una celda de Jupyter:
+El notebook utiliza el mismo CSV que la aplicación. Las dependencias adicionales de modelado pueden instalarse desde una celda de Jupyter:
 
 ```python
 %pip install "scikit-learn==1.8.0" "joblib>=1.4,<2" "plotly==6.9.0"
 ```
 
-Ejecuta el notebook en orden. No es necesario arrancar la aplicación ni ejecutar otra vez los notebooks 01 y 02 si el CSV ya está preparado. El notebook registra las versiones realmente utilizadas. Al integrar el modelo en Dash se deberán reproducir esas versiones y ampliar las dependencias del despliegue.
+Las celdas se ejecutan en orden a partir del CSV ya preparado, sin necesidad de iniciar Dash. El notebook registra las versiones utilizadas para poder reproducir el entrenamiento. La incorporación del modelo a la aplicación incluirá la actualización de las dependencias del despliegue.
 
 ## Despliegue en Render
 
@@ -209,7 +211,7 @@ El objeto `server` está definido como `server = app.server`. Render proporciona
 - [ ] Valorar la ampliación a franjas horarias tras evaluar la primera versión diaria.
 - [ ] Comprobar la versión final, actualizar la documentación y preparar la exposición de cinco minutos.
 
-Los avances se documentan mediante commits descriptivos con cambios, decisiones y resultados. La propuesta inicial se conserva como registro del alcance de partida; este README refleja su evolución.
+Documento los avances mediante commits descriptivos con los cambios, las decisiones y los resultados. Conservo la propuesta inicial como referencia del alcance de partida y actualizo este README conforme avanza el proyecto.
 
 ## Tecnologías y referencias
 
