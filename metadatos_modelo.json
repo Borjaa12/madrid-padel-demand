@@ -1,0 +1,65 @@
+{
+  "archivo_entrada": "Datos/app/reservas_padel_app.csv",
+  "sha256": "d4b617ba4fdbc173b1922e8711fd8ab58a253e56abe41777ed575915f40e3905",
+  "registros": 417661,
+  "centros": 45,
+  "filas_diarias_observadas": 23348,
+  "versiones": {
+    "python": "3.13.15",
+    "pandas": "3.1.0",
+    "numpy": "2.5.4",
+    "scikit-learn": "1.9.1",
+    "joblib": "1.6.0",
+    "plotly": "7.1.0"
+  },
+  "metodo_elegido_en_validacion": "modelo",
+  "validacion_inicio": "2026-05-04",
+  "test_inicio": "2026-06-29",
+  "test_fin": "2026-08-30",
+  "horizonte_dias": 7,
+  "parametros": {
+    "loss": "poisson",
+    "learning_rate": 0.08,
+    "max_iter": 120,
+    "max_leaf_nodes": 15,
+    "min_samples_leaf": 30,
+    "l2_regularization": 1.0,
+    "early_stopping": false,
+    "random_state": 42
+  },
+  "reglas_apoyo": {
+    "min_dias_historicos": 28,
+    "ventana_reciente": 56,
+    "min_dias_recientes": 14
+  },
+  "metricas_validacion": {
+    "referencia": {
+      "MAE": 4.400459603997832,
+      "RMSE": 6.234406567895137,
+      "sesgo": -0.25201657542475037,
+      "n_dias_centro": 2304
+    },
+    "modelo": {
+      "MAE": 4.395431732714125,
+      "RMSE": 6.0642648243833355,
+      "sesgo": 0.13999261143140881,
+      "n_dias_centro": 2304
+    }
+  },
+  "metricas_test": {
+    "referencia": {
+      "MAE": 6.099330942816812,
+      "RMSE": 8.155198860570644,
+      "sesgo": 4.389885396488548,
+      "n_dias_centro": 2015
+    },
+    "modelo": {
+      "MAE": 4.348221009596031,
+      "RMSE": 5.625040358148731,
+      "sesgo": 2.272431474855268,
+      "n_dias_centro": 2015
+    }
+  },
+  "supuesto_disponibilidad": "Histórico previo disponible al emitir; no se reproduce el retraso mensual de publicación",
+  "tratamiento_ausencias": "Objetivo desconocido: sin imputación ni evaluación; predicción condicional"
+}
