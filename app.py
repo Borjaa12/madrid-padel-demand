@@ -1,4 +1,4 @@
-"""Primera versión de Madrid Pádel: ejecutar con python app.py o desde el notebook 03."""
+"""Madrid Pádel: ejecutar con python app.py o desde el notebook 03."""
 from pathlib import Path
 import os
 import numpy as np
@@ -7,6 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, dcc, html
 from analisis import cargar_datos, filtrar, resumen_semanal, patron_horario
+from panel_prediccion import crear_panel, registrar_callbacks
 
 BASE = Path(__file__).resolve().parent
 DATOS = cargar_datos(BASE / 'Datos' / 'app' / 'reservas_padel_app.csv')
@@ -69,7 +70,7 @@ def panel(titulo, descripcion, identificador):
 
 app.layout = html.Div([
     html.Header([
-        html.Div([html.Span('ICAI · VISUALIZACIÓN DE DATOS', className='eyebrow'),
+        html.Div([html.Span('ICAI', className='eyebrow'),
             html.H1(['Madrid ', html.Span('Pádel')]),
             html.P('Cuándo se juega, cómo cambia el uso y qué cuentan los datos.')]),
         html.Div([html.Span('RESERVAS INDIVIDUALES', className='badge'),
@@ -116,6 +117,7 @@ app.layout = html.Div([
             html.P('Los días o semanas sin registros no demuestran un cierre ni ausencia de demanda. El número de centros y la cobertura pueden cambiar; una variación semanal no mide por sí sola un cambio de demanda.'),
             html.P('No se dispone del calendario completo de pistas disponibles. Por eso no se estima un porcentaje de ocupación ni demanda no satisfecha.')
         ], className='methodology'),
+        crear_panel(CENTROS),
         html.Footer([html.Span('Fuente: Ayuntamiento de Madrid · CC BY 4.0'),
             html.A('Consultar datos de origen ↗', href='https://datos.madrid.es/dataset/300086-0-deportes-utilizacion-unidades',
                    target='_blank', rel='noopener noreferrer')])
@@ -209,6 +211,9 @@ def descargar(n_clicks, centro, inicio, fin):
     inicio, fin = max(pd.Timestamp(inicio), MIN_FECHA), min(pd.Timestamp(fin), MAX_FECHA)
     tabla = resumen_semanal(filtrar(DATOS, centro, inicio, fin), inicio, fin)
     return dcc.send_data_frame(tabla.to_csv, 'resumen_semanal_padel.csv', index=False, encoding='utf-8-sig')
+
+
+registrar_callbacks(app)
 
 
 if __name__ == '__main__':
