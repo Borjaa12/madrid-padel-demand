@@ -6,7 +6,7 @@
 
 He desarrollado Madrid Pádel para explorar los registros de reservas individuales de pádel en centros deportivos municipales de gestión directa de Madrid. Con esta aplicación busco analizar cuándo se juega, cómo evoluciona el uso registrado y qué diferencias aparecen entre centros y periodos.
 
-La primera versión está desarrollada con Dash y publicada en Render. Actualmente estoy trabajando en la fase predictiva, con una primera estimación diaria por centro y una evaluación temporal frente a una referencia histórica. Las predicciones todavía no están integradas en la aplicación pública.
+La aplicación está desarrollada con Dash y publicada en Render. He integrado el análisis histórico y una estimación diaria por centro para siete días, junto con la comparación frente a una referencia histórica y los errores de evaluación temporal.
 
 El proyecto está orientado a gestores deportivos, personal de planificación y personas interesadas en el uso del pádel municipal.
 
@@ -18,6 +18,10 @@ El proyecto está orientado a gestores deportivos, personal de planificación y 
 - Mapa de calor por día de la semana y hora de inicio.
 - Consulta de cobertura y comparación semanal.
 - Descarga del resumen semanal filtrado en CSV.
+- Panel predictivo con selector de centro independiente del histórico.
+- Comparación del modelo con la referencia y los registros observados en prueba.
+- Consulta de MAE, RMSE y sesgo por centro, y resultados globales.
+- Descarga de las estimaciones diarias en CSV.
 - Diseño adaptable al ancho de pantalla.
 
 La aplicación pública se ejecuta en Render y no requiere iniciar JupyterHub. En el plan gratuito, el servicio puede suspenderse por inactividad y tardar en responder en la primera visita.
@@ -78,13 +82,13 @@ He realizado la revisión de duplicados durante la preparación de los datos ori
 
 **Variación semanal.** Cambio porcentual respecto a la semana anterior. Debe interpretarse junto con los centros representados y la cobertura. Una variación no mide por sí sola un cambio de demanda.
 
-## Primera fase predictiva: notebook 04
+## Modelo diario y evaluación temporal
 
-He preparado el primer experimento predictivo en `04_modelo_predictivo.ipynb`. La ejecución y revisión de sus resultados es el siguiente paso del proyecto. Añadiré las métricas y el método seleccionado cuando complete esa evaluación.
+He completado el experimento en `04_modelo_predictivo.ipynb` y he integrado el método seleccionado en la aplicación. El modelo se carga desde un archivo `joblib` y genera las estimaciones al seleccionar un centro. La web no vuelve a entrenarlo.
 
 ### Objetivo y tratamiento de ausencias
 
-Para esta primera versión he definido cada observación de entrenamiento como un **centro-día con al menos un registro individual**. La variable que quiero estimar es el número de registros de ese día. Revisaré las combinaciones sin registros, pero no las rellenaré con cero ni las utilizaré como objetivos de evaluación.
+Para esta primera versión he definido cada observación de entrenamiento como un **centro-día con al menos un registro individual**. La variable que estimo es el número de registros de ese día. He auditado las combinaciones sin registros y las he excluido de los objetivos de evaluación, sin rellenarlas con cero.
 
 Por tanto, las estimaciones son **condicionales a que el centro tenga registros ese día**. No predicen la probabilidad de apertura ni el volumen incondicional de todos los días naturales. Esta selección puede producir valores superiores a la media de todos los días, y disponer de algún registro no garantiza cobertura completa.
 
@@ -104,15 +108,34 @@ Por tanto, las estimaciones son **condicionales a que el centro tenga registros 
 | Validación | 04/05/2026–28/06/2026 | Elegir el método por MAE |
 | Prueba final | 29/06/2026–30/08/2026 | Evaluar la elección ya fijada |
 
-He planteado una evaluación que simula una previsión cada lunes: la referencia y el modelo se ajustan únicamente con fechas anteriores y predicen los siete días siguientes. Las semanas ya terminadas pueden entrar en el entrenamiento de previsiones posteriores, también dentro del bloque de prueba. Mantendré fijados el método seleccionado y sus parámetros antes de examinar los resultados del test.
+He realizado una evaluación que simula una previsión cada lunes: la referencia y el modelo se ajustan únicamente con fechas anteriores y predicen los siete días siguientes. Las semanas ya terminadas pueden entrar en el entrenamiento de previsiones posteriores, también dentro del bloque de prueba. He mantenido fijados el método seleccionado y sus parámetros antes de examinar los resultados del test.
 
 En cada origen se incluyen centros con al menos 28 días observados en el histórico y 14 en los últimos 56 días. Estos umbrales iniciales indican apoyo histórico, no apertura o cobertura completa. El notebook registra las exclusiones y las combinaciones sin objetivo observable.
 
-Compararé los métodos mediante MAE, RMSE y sesgo global, además del error por centro, semana y horizonte. Elegiré el método con menor MAE de validación; en caso de empate, conservaré la referencia. Utilizaré el bloque de prueba para evaluar esa elección, sin cambiarla a partir de sus resultados.
+He comparado los métodos mediante MAE, RMSE y sesgo global, además del análisis de errores por centro, semana y horizonte. He seleccionado el método con menor MAE de validación, con la referencia como criterio de desempate. He utilizado la prueba final para evaluar esa elección, sin modificarla a partir de sus resultados.
 
 **Disponibilidad de la información:** la evaluación supone que el histórico anterior al origen ya estaba disponible. No reproduce el retraso de publicación mensual de la fuente. Es un experimento retrospectivo, no una prueba de funcionamiento en tiempo real.
 
 Después de la evaluación, el notebook realiza un ajuste final con todo el histórico y genera una demostración para los siete días siguientes a la última fecha disponible. Con el CSV actual, ese intervalo es **01/09/2026–07/09/2026**. Por tanto, se trata de una demostración histórica. El proceso guarda el modelo con `joblib`, sus metadatos, las versiones utilizadas, las predicciones y las conclusiones del experimento.
+
+### Resultados
+
+| Bloque | Método | MAE | RMSE | Sesgo | Centro-días evaluados |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Validación | Referencia | 4,400 | 6,234 | −0,252 | 2.304 |
+| Validación | Modelo | 4,395 | 6,064 | 0,140 | 2.304 |
+| Prueba final | Referencia | 6,099 | 8,155 | 4,390 | 2.015 |
+| Prueba final | Modelo | 4,348 | 5,625 | 2,272 | 2.015 |
+
+He seleccionado el modelo por su menor MAE de validación, aunque la diferencia frente a la referencia es mínima. En prueba, reduce el MAE aproximadamente un **28,71 %**. El MAE se expresa en registros por centro y día observado. El sesgo es la media de la predicción menos el valor observado: su signo positivo indica sobreestimación.
+
+En prueba he excluido **666 centro-días sin objetivo observado**. La mejora corresponde al bloque temporal evaluado, que incluye verano, y no garantiza el mismo rendimiento en otras estaciones.
+
+### Predicción en la aplicación
+
+La demostración abarca **01/09/2026–07/09/2026**, con datos hasta el 31 de agosto de 2026. No es una previsión actualizada a la fecha de consulta. Incluye **40 centros elegibles de los 45 del histórico**. Los cinco restantes aparecen con una explicación y sin descarga de previsiones.
+
+El selector predictivo es independiente de los filtros del análisis histórico. Para cada centro muestro las estimaciones del modelo y de la referencia, la comparación retrospectiva de prueba y las métricas calculadas sobre días observados. No he calculado intervalos de predicción.
 
 ## Estructura del proyecto
 
@@ -125,7 +148,9 @@ Después de la evaluación, el notebook realiza un ajuste final con todo el hist
 | `03_iniciar_dash.ipynb` | Arranque de la aplicación en JupyterHub de ICAI |
 | `04_modelo_predictivo.ipynb` | Preparación, evaluación y guardado del primer modelo |
 | `app.py` | Interfaz Dash y callbacks |
-| `analisis.py` | Carga, filtros y cálculos del panel |
+| `analisis.py` | Carga, filtros y cálculos del panel histórico |
+| `prediccion.py` | Carga del modelo, variables, estimaciones y métricas |
+| `panel_prediccion.py` | Interfaz y callbacks del panel predictivo |
 | `assets/estilos.css` | Diseño de la aplicación |
 | `requirements.txt` | Dependencias de la aplicación desplegada |
 | `.python-version` | Familia de Python utilizada en Render |
@@ -157,7 +182,14 @@ python -m pip install -r requirements.txt
 python app.py
 ```
 
-La aplicación queda disponible en la dirección que muestra la terminal, normalmente `http://127.0.0.1:8050`. El CSV debe estar en `Datos/app/` y el CSS en `assets/`.
+La aplicación queda disponible en la dirección que muestra la terminal, normalmente `http://127.0.0.1:8050`. Para ejecutar la versión integrada deben existir:
+
+- `Datos/app/reservas_padel_app.csv`.
+- `Datos/modelo/predicciones_test.csv`.
+- `modelos/modelo_diario.joblib` y `modelos/metadatos_modelo.json`.
+- `assets/estilos.css` y los módulos Python de la aplicación.
+
+Conservo también `modelos/versiones_entrenamiento.txt` y las tablas de métricas y auditoría para documentar la evaluación. Los Excel originales no son necesarios para abrir la aplicación, pero sí para reproducir la preparación desde el principio.
 
 ### En JupyterHub de ICAI
 
@@ -165,13 +197,13 @@ He incluido `03_iniciar_dash.ipynb` para iniciar la aplicación desde JupyterHub
 
 ### Para ejecutar el notebook 04
 
-El notebook utiliza el mismo CSV que la aplicación. Las dependencias adicionales de modelado pueden instalarse desde una celda de Jupyter:
+El notebook utiliza el mismo CSV que la aplicación. Instalo las versiones fijadas en el proyecto desde una celda de Jupyter:
 
 ```python
-%pip install "scikit-learn==1.8.0" "joblib>=1.4,<2" "plotly==6.9.0"
+%pip install -r requirements.txt
 ```
 
-Las celdas se ejecutan en orden a partir del CSV ya preparado, sin necesidad de iniciar Dash. El notebook registra las versiones utilizadas para poder reproducir el entrenamiento. La incorporación del modelo a la aplicación incluirá la actualización de las dependencias del despliegue.
+Las celdas se ejecutan en orden a partir del CSV ya preparado, sin necesidad de iniciar Dash. El notebook registra las versiones utilizadas para poder reproducir el entrenamiento. El archivo `requirements.txt` incluye las dependencias del modelo y de la aplicación. Tras una instalación, reinicio el kernel antes de ejecutar las celdas. Para regenerar los datos desde los Excel utilizo además `openpyxl` en el entorno de preparación.
 
 ## Despliegue en Render
 
@@ -205,13 +237,25 @@ El objeto `server` está definido como `server = app.server`. Render proporciona
 - [x] Exploración, cobertura e indicadores.
 - [x] Aplicación interactiva en Dash.
 - [x] Primera versión pública en Render.
-- [x] Preparación del notebook 04 y de su protocolo de evaluación.
-- [ ] Ejecutar y revisar el notebook 04; documentar sus métricas y el método seleccionado.
-- [ ] Integrar el método seleccionado y sus limitaciones en Dash.
-- [ ] Valorar la ampliación a franjas horarias tras evaluar la primera versión diaria.
-- [ ] Comprobar la versión final, actualizar la documentación y preparar la exposición de cinco minutos.
+- [x] Entrenamiento y evaluación temporal del modelo diario.
+- [x] Documentación de métricas y del método seleccionado.
+- [x] Integración del modelo y de sus limitaciones en Dash.
+- [x] Publicación del panel predictivo en Render.
+- [ ] Publicar la revisión visual y comprobar la versión final en ordenador y móvil.
+- [x] Actualizar la documentación y preparar la presentación.
+- [ ] Ensayar la exposición de cinco minutos y las preguntas.
 
 Documento los avances mediante commits descriptivos con los cambios, las decisiones y los resultados. Conservo la propuesta inicial como referencia del alcance de partida y actualizo este README conforme avanza el proyecto.
+
+## Mejoras posibles
+
+Como siguiente ampliación, considero útil comparar varios centros durante un mismo periodo mostrando sus días con registros. Los recuentos no permitirían concluir qué centro es más eficiente, porque difieren el número de pistas y la cobertura.
+
+También planteo actualizar el histórico con los meses que publique la fuente y evaluar si existe apoyo suficiente para predecir por franja horaria. Mantengo estas ampliaciones fuera del alcance de la primera versión diaria.
+
+## Revisión visual
+
+He preparado una revisión con fondo claro, tipografía uniforme y azul marino como base. Distingo el modelo en azul y la referencia en naranja. El mapa de calor utiliza una escala Cividis, de azul oscuro a amarillo, y permite mostrar las cifras de cada casilla. La escala se ajusta a la selección, por lo que comparo valores numéricos al cambiar de centro o periodo. Esta revisión está pendiente de publicación y comprobación final.
 
 ## Tecnologías y referencias
 
