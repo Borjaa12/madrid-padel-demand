@@ -4,8 +4,8 @@ import plotly.graph_objects as go
 from dash import Input, Output, State, dcc, html
 from prediccion import cargar_modelo, predecir, evaluar_centro
 
-VERDE = '#127768'
-AZUL = '#457da5'
+COLOR_MODELO = '#2563eb'
+COLOR_REFERENCIA = '#c05a16'
 
 
 def numero(valor, decimales=2):
@@ -18,10 +18,10 @@ def figura(titulo_y='Registros por centro y día'):
     fig = go.Figure()
     fig.update_layout(template='plotly_white', height=420, hovermode='x unified',
                       margin=dict(l=45, r=20, t=35, b=65),
-                      font=dict(family='Arial', color='#263d3b'),
+                      font=dict(family='Arial', color='#17243b'),
                       legend=dict(orientation='h', y=1.12),
                       xaxis_title='Fecha', yaxis_title=titulo_y)
-    fig.update_yaxes(rangemode='tozero', gridcolor='#edf2ef')
+    fig.update_yaxes(rangemode='tozero', gridcolor='#e8edf4')
     return fig
 
 
@@ -65,7 +65,7 @@ def crear_panel(centros):
             html.Details([html.Summary('Ver estimaciones diarias y errores del centro'),
                           html.Div(id='tabla-prevision', className='table-scroll'),
                           html.Div(id='tabla-error', className='table-scroll')], className='panel details')
-        ]), color=VERDE),
+        ]), color=COLOR_MODELO),
         html.Details([
             html.Summary('Método, resultados globales y límites'),
             html.P('He comparado una media histórica por centro y día de la semana con un modelo HistGradientBoosting de variables de calendario. He seleccionado el método utilizando únicamente el MAE de validación.'),
@@ -79,7 +79,7 @@ def crear_panel(centros):
             html.P('En la evaluación temporal he reentrenado cada lunes con fechas anteriores. La aplicación carga el modelo final guardado. Para emitir la demostración se exigen al menos 28 días históricos observados y 14 en los últimos 56 días; 40 de los 45 centros cumplen esos criterios.'),
             html.P('Se supone disponible el histórico anterior a cada previsión; no se reproduce el retraso mensual de publicación de los datos. No se han estimado intervalos de predicción.')
         ], className='panel details table-scroll')
-    ], className='prediction-section')
+    ], className='prediction-section', id='predicciones')
 
 
 def actualizar_prediccion(centro):
@@ -102,7 +102,7 @@ def actualizar_prediccion(centro):
         estado = f'{centro}: sin previsión. No cumple los criterios de apoyo histórico; esto no demuestra un cierre.'
         tabla_pre = html.P('No se emiten estimaciones para este centro.')
     else:
-        for col, nombre, color, dash in [('pred_modelo', 'Modelo', VERDE, 'solid'), ('pred_referencia', 'Referencia', AZUL, 'dash')]:
+        for col, nombre, color, dash in [('pred_modelo', 'Modelo', COLOR_MODELO, 'solid'), ('pred_referencia', 'Referencia', COLOR_REFERENCIA, 'dash')]:
             fig_pre.add_trace(go.Scatter(x=prevision['fecha'], y=prevision[col], name=nombre, mode='lines+markers', line=dict(color=color, dash=dash)))
         estado = f'{centro}: siete estimaciones diarias condicionadas a días con registros. Método seleccionado: {metodo.lower()}.'
         tabla_pre = prevision[['fecha', 'pred_modelo', 'pred_referencia', 'estimacion_condicional']].copy()
@@ -114,7 +114,7 @@ def actualizar_prediccion(centro):
         fig_test.add_annotation(text='Sin días observados evaluables en la prueba.', x=.5, y=.5, xref='paper', yref='paper', showarrow=False)
     else:
         test = test.set_index('fecha').reindex(pd.date_range('2026-06-29', '2026-08-30'))
-        for col, nombre, color, dash in [('reservas_registradas', 'Observados', '#263d3b', 'solid'), ('pred_modelo', 'Modelo', VERDE, 'solid'), ('pred_referencia', 'Referencia', AZUL, 'dash')]:
+        for col, nombre, color, dash in [('reservas_registradas', 'Observados', '#17243b', 'solid'), ('pred_modelo', 'Modelo', COLOR_MODELO, 'solid'), ('pred_referencia', 'Referencia', COLOR_REFERENCIA, 'dash')]:
             valores = test[col].where(test['reservas_registradas'].notna())
             fig_test.add_trace(go.Scatter(x=test.index, y=valores, name=nombre, mode='lines', connectgaps=False, line=dict(color=color, dash=dash)))
     return kpis, fig_pre, fig_test, tabla_pre, tabla_html(errores), estado, prevision.empty

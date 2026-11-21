@@ -13,7 +13,7 @@ BASE = Path(__file__).resolve().parent
 DATOS = cargar_datos(BASE / 'Datos' / 'app' / 'reservas_padel_app.csv')
 MIN_FECHA, MAX_FECHA = DATOS['fecha'].min(), DATOS['fecha'].max()
 CENTROS = sorted(DATOS['Centro deportivo'].unique())
-VERDE = '#127768'
+AZUL = '#2563eb'
 CONFIG_GRAFICOS = {'displaylogo': False, 'responsive': True}
 app = Dash(__name__, assets_folder=str(BASE / 'assets'), title='Madrid Pádel | ICAI')
 server = app.server
@@ -31,12 +31,12 @@ def tarjeta(titulo, valor, detalle):
                      html.P(detalle, className='kpi-detail')], className='kpi')
 
 
-def estilo_figura(fig, altura=310):
+def estilo_figura(fig, altura=420):
     fig.update_layout(template='plotly_white', height=altura,
-        font={'family': 'Arial, sans-serif', 'color': '#263d3b', 'size': 12},
-        paper_bgcolor='white', plot_bgcolor='white', margin={'l': 45, 'r': 20, 't': 20, 'b': 45})
+        font={'family': 'Arial, sans-serif', 'color': '#17243b', 'size': 13},
+        paper_bgcolor='white', plot_bgcolor='white', margin={'l': 45, 'r': 20, 't': 20, 'b': 62})
     fig.update_xaxes(showgrid=False)
-    fig.update_yaxes(gridcolor='#edf2ef')
+    fig.update_yaxes(gridcolor='#e8edf4')
     return fig
 
 
@@ -53,6 +53,8 @@ def panel(titulo, descripcion, identificador):
         [
             html.H2(titulo),
             html.P(descripcion, className="panel-note"),
+            dcc.Checklist(id='mostrar-valores', options=[{'label': 'Mostrar cifras', 'value': 'mostrar'}],
+                          value=['mostrar'], className='heatmap-toggle') if identificador == 'horario' else None,
             dcc.Graph(
                 id=identificador,
                 config=CONFIG_GRAFICOS,
@@ -64,7 +66,7 @@ def panel(titulo, descripcion, identificador):
                 }
             )
         ],
-        className="panel"
+        className="panel horario-panel" if identificador == "horario" else "panel"
     )
 
 
@@ -78,6 +80,7 @@ app.layout = html.Div([
             html.Small('Borja Ibáñez Pérez')], className='hero-meta')
     ], className='hero'),
     html.Main([
+        html.Nav([html.A('Análisis histórico', href='#historico'), html.A('Predicción y evaluación', href='#predicciones')], className='section-nav', **{'aria-label': 'Secciones del panel'}),
         html.Section([
             html.Div([html.Label('Centro deportivo', htmlFor='centro'),
                 dcc.Dropdown(id='centro', options=[{'label':'Todos los centros', 'value':'__todos__'}]
@@ -89,13 +92,13 @@ app.layout = html.Div([
                     start_date_placeholder_text='Inicio', end_date_placeholder_text='Fin')], className='date-filter'),
             html.Button('Descargar resumen semanal ↓', id='descargar', n_clicks=0, className='download'),
             dcc.Download(id='descarga-csv')
-        ], className='filters'),
+        ], className='filters', id='historico'),
         html.P(id='estado', className='status', role='status'),
         dcc.Loading(html.Div([
             html.Div(id='indicadores', className='kpis'),
             html.Div([
                 panel('01 / Evolución semanal', 'Registros por semana de lunes a domingo. Los extremos parciales se omiten.', 'semanal'),
-                panel('02 / Día y hora', 'Media de inicios por día observado. El color indica registros, no ocupación.', 'horario')
+                panel('02 / Día y hora', 'Media de inicios por día observado. Amarillo claro: menor volumen. Rojo oscuro: mayor volumen.', 'horario')
             ], className='charts'),
             html.P(id='nota-semanas', className='method-note'),
             html.P(id='nota-horario', className='method-note'),
@@ -110,9 +113,9 @@ app.layout = html.Div([
                 html.P('Últimas 12 semanas del intervalo. Una casilla vacía significa que no se puede calcular el valor.'),
                 html.Div(id='tabla-semanas', className='table-scroll')
             ], className='panel details')
-        ]), type='circle', color=VERDE),
-        html.Section([
-            html.H2('Cómo interpretar este panel'),
+        ]), type='circle', color=AZUL),
+        html.Details([
+            html.Summary('Cómo interpretar este panel'),
             html.P('Una reserva se cuenta una vez, en su hora de inicio. La media horaria utiliza solo fechas con algún registro individual en la selección; las franjas sin registros de esas fechas aportan cero.'),
             html.P('Los días o semanas sin registros no demuestran un cierre ni ausencia de demanda. El número de centros y la cobertura pueden cambiar; una variación semanal no mide por sí sola un cambio de demanda.'),
             html.P('No se dispone del calendario completo de pistas disponibles. Por eso no se estima un porcentaje de ocupación ni demanda no satisfecha.')
@@ -142,8 +145,9 @@ def tabla_html(semanas):
     Output('indicadores','children'), Output('semanal','figure'), Output('horario','figure'),
     Output('cobertura','figure'), Output('tabla-semanas','children'), Output('estado','children'),
     Output('nota-semanas','children'), Output('nota-horario','children'),
-    Input('centro','value'), Input('fechas','start_date'), Input('fechas','end_date'))
-def actualizar(centro, inicio, fin):
+    Input('centro','value'), Input('fechas','start_date'), Input('fechas','end_date'),
+    Input('mostrar-valores','value'))
+def actualizar(centro, inicio, fin, mostrar_valores=None):
     if not inicio or not fin or pd.Timestamp(inicio) > pd.Timestamp(fin):
         vacia = figura_vacia('Selecciona un intervalo de fechas válido.')
         return [], vacia, vacia, vacia, '', 'Selecciona ambas fechas en orden.', '', ''
@@ -177,14 +181,14 @@ def actualizar(centro, inicio, fin):
         fig_cob = figura_vacia('Amplía el intervalo para ver la cobertura semanal.')
     else:
         fig_sem = px.line(semanas, x='semana', y='reservas_registradas', markers=True,
-            hover_data=['centros_con_registros','dias_con_registros'], color_discrete_sequence=[VERDE],
+            hover_data=['centros_con_registros','dias_con_registros'], color_discrete_sequence=[AZUL],
             labels={'semana':'Lunes de la semana','reservas_registradas':'Registros',
                 'centros_con_registros':'Centros','dias_con_registros':'Días con registros'})
         fig_sem.update_traces(connectgaps=False, line_width=2.5, marker_size=5)
         estilo_figura(fig_sem).update_layout(hovermode='x unified')
         fig_sem.update_yaxes(rangemode='tozero')
         fig_cob = px.line(semanas, x='semana', y='centros_con_registros', markers=True,
-            color_discrete_sequence=['#457da5'], labels={'semana':'Lunes de la semana','centros_con_registros':'Centros con registros'})
+            color_discrete_sequence=['#64748b'], labels={'semana':'Lunes de la semana','centros_con_registros':'Centros con registros'})
         fig_cob.update_traces(connectgaps=False)
         estilo_figura(fig_cob, 240).update_yaxes(range=[0, len(CENTROS)+1])
     media, fechas = patron_horario(seleccion)
@@ -193,13 +197,22 @@ def actualizar(centro, inicio, fin):
     matriz = media[horas]
     muestras = np.repeat(fechas.to_numpy()[:, None], len(horas), axis=1)
     fig_hora = go.Figure(go.Heatmap(z=matriz.to_numpy(), x=[f'{h:02d}:00' for h in horas],
-        y=list(matriz.index), customdata=muestras, colorscale=[[0,'#f0f7f4'],[.4,'#87cabb'],[1,'#075548']],
-        zmin=0, hoverongaps=False, colorbar={'title':'Media','thickness':10},
+        y=list(matriz.index), customdata=muestras, colorscale='YlOrRd', xgap=2, ygap=2,
+        zmin=0, hoverongaps=False, colorbar={'title':{'text':'Media'},'thickness':12,'outlinewidth':0},
         hovertemplate='%{y} · %{x}<br>Media: %{z:.1f} registros<br>Fechas observadas: %{customdata}<extra></extra>'))
-    estilo_figura(fig_hora).update_yaxes(autorange='reversed')
+    if mostrar_valores and 'mostrar' in mostrar_valores:
+        maximo = float(np.nanmax(matriz.to_numpy()))
+        for dia in matriz.index:
+            for hora in horas:
+                valor = matriz.loc[dia, hora]
+                if pd.notna(valor):
+                    color = '#ffffff' if maximo > 0 and valor / maximo >= .70 else '#17243b'
+                    fig_hora.add_annotation(x=f'{hora:02d}:00', y=dia, text=numero(valor, 1),
+                                            showarrow=False, font={'size':10, 'color':color})
+    estilo_figura(fig_hora).update_yaxes(autorange='reversed', showgrid=False)
     fig_hora.update_xaxes(title='Hora de inicio', tickangle=-45)
     nota_sem = 'Las tarjetas de última semana y variación usan la última semana de lunes a domingo que cabe en el intervalo. Que quepa entera no garantiza que sus datos estén completos.'
-    nota_hora = 'Fechas utilizadas por día: ' + ' · '.join(f'{d[:3]}: {int(n)}' for d,n in fechas.items()) + '. Las medias suman los centros seleccionados; no son medias por centro.'
+    nota_hora = 'Fechas utilizadas por día: ' + ' · '.join(f'{d[:3]}: {int(n)}' for d,n in fechas.items()) + '. Las medias suman los centros seleccionados; no son medias por centro. La escala de color se ajusta a la selección: para comparar gráficos, consulta las cifras.'
     return tarjetas, fig_sem, fig_hora, fig_cob, tabla_html(semanas), estado, nota_sem, nota_hora
 
 

@@ -255,7 +255,7 @@ También planteo actualizar el histórico con los meses que publique la fuente y
 
 ## Revisión visual
 
-He preparado una revisión con fondo claro, tipografía uniforme y azul marino como base. Distingo el modelo en azul y la referencia en naranja. El mapa de calor utiliza una escala Cividis, de azul oscuro a amarillo, y permite mostrar las cifras de cada casilla. La escala se ajusta a la selección, por lo que comparo valores numéricos al cambiar de centro o periodo. Esta revisión está pendiente de publicación y comprobación final.
+He preparado una revisión con fondo claro, tipografía uniforme y azul marino como base. Distingo el modelo en azul y la referencia en naranja. El mapa de calor utiliza una escala YlOrRd, de amarillo claro a naranja y rojo oscuro, y permite mostrar las cifras de cada casilla. La escala se ajusta a la selección, por lo que comparo valores numéricos al cambiar de centro o periodo. Esta revisión está pendiente de publicación y comprobación final.
 
 ## Tecnologías y referencias
 
