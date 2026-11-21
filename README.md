@@ -46,22 +46,23 @@ El conjunto utilizado por la aplicación contiene:
 
 | Indicador | Valor |
 | --- | ---: |
-| Registros de reservas individuales | 417.661 |
+| Registros de reservas individuales | 719.178 |
 | Centros tras normalizar nombres | 45 |
-| Primera fecha | 02/01/2025 |
-| Última fecha | 31/08/2026 |
+| Primera fecha | 02/01/2024 |
+| Última fecha | 31/10/2026 |
+| Registros de 2024 | 252.954 |
 | Registros de 2025 | 256.122 |
-| Registros de 2026, enero–agosto | 161.539 |
+| Registros de 2026, enero–octubre | 210.102 |
 
 El CSV de la aplicación es `Datos/app/reservas_padel_app.csv` y conserva una fila por registro individual seleccionado, con cuatro columnas: `fecha`, `Centro deportivo`, `hora_inicio_num` y `duracion_minutos`. Los cálculos agregados se obtienen a partir de ese archivo; la web no necesita leer los Excel originales.
 
-Los totales anuales no son directamente comparables: 2025 incluye doce meses y 2026, ocho.
+Los totales anuales no son directamente comparables: 2024 y 2025 incluyen doce meses y 2026, diez.
 
 ## Preparación y análisis realizados
 
 Hasta ahora he completado las siguientes tareas:
 
-- Lectura y combinación de hojas mensuales de varios años.
+- Lectura de los Excel por bloques y selección de los registros de pádel antes de combinar los años.
 - Selección por unidad deportiva o uso relacionado con pádel.
 - Revisión documentada de los casos seleccionados únicamente por uso.
 - Revisión de duplicados y validación de fechas, horarios y duraciones.
@@ -106,7 +107,8 @@ Por tanto, las estimaciones son **condicionales a que el centro tenga registros 
 | --- | --- | --- |
 | Histórico inicial | Hasta 03/05/2026 | Primer entrenamiento |
 | Validación | 04/05/2026–28/06/2026 | Elegir el método por MAE |
-| Prueba final | 29/06/2026–30/08/2026 | Evaluar la elección ya fijada |
+| Prueba de verano | 29/06/2026–30/08/2026 | Evaluar la elección ya fijada |
+| Evaluación adicional | 31/08/2026–25/10/2026 | Comprobar el rendimiento durante ocho semanas adicionales |
 
 He realizado una evaluación que simula una previsión cada lunes: la referencia y el modelo se ajustan únicamente con fechas anteriores y predicen los siete días siguientes. Las semanas ya terminadas pueden entrar en el entrenamiento de previsiones posteriores, también dentro del bloque de prueba. He mantenido fijados el método seleccionado y sus parámetros antes de examinar los resultados del test.
 
@@ -116,26 +118,30 @@ He comparado los métodos mediante MAE, RMSE y sesgo global, además del anális
 
 **Disponibilidad de la información:** la evaluación supone que el histórico anterior al origen ya estaba disponible. No reproduce el retraso de publicación mensual de la fuente. Es un experimento retrospectivo, no una prueba de funcionamiento en tiempo real.
 
-Después de la evaluación, el notebook realiza un ajuste final con todo el histórico y genera una demostración para los siete días siguientes a la última fecha disponible. Con el CSV actual, ese intervalo es **01/09/2026–07/09/2026**. Por tanto, se trata de una demostración histórica. El proceso guarda el modelo con `joblib`, sus metadatos, las versiones utilizadas, las predicciones y las conclusiones del experimento.
+Después de la evaluación, el notebook realiza un ajuste final con todo el histórico y genera una demostración para los siete días siguientes a la última fecha disponible. Con el CSV actual, ese intervalo es **01/11/2026–07/11/2026**. Por tanto, se trata de una demostración histórica. El proceso guarda el modelo con `joblib`, sus metadatos, las versiones utilizadas, las predicciones y las conclusiones del experimento.
 
 ### Resultados
 
 | Bloque | Método | MAE | RMSE | Sesgo | Centro-días evaluados |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Validación | Referencia | 4,400 | 6,234 | −0,252 | 2.304 |
-| Validación | Modelo | 4,395 | 6,064 | 0,140 | 2.304 |
-| Prueba final | Referencia | 6,099 | 8,155 | 4,390 | 2.015 |
-| Prueba final | Modelo | 4,348 | 5,625 | 2,272 | 2.015 |
+| Validación | Referencia | 4,573 | 6,478 | −0,581 | 2.304 |
+| Validación | Modelo | 4,486 | 6,225 | 0,211 | 2.304 |
+| Prueba de verano | Referencia | 6,067 | 8,108 | 4,127 | 2.015 |
+| Prueba de verano | Modelo | 4,203 | 5,462 | 1,422 | 2.015 |
+| Evaluación adicional | Referencia | 4,931 | 6,996 | −2,268 | 2.226 |
+| Evaluación adicional | Modelo | 4,811 | 6,803 | 0,457 | 2.226 |
 
-He seleccionado el modelo por su menor MAE de validación, aunque la diferencia frente a la referencia es mínima. En prueba, reduce el MAE aproximadamente un **28,71 %**. El MAE se expresa en registros por centro y día observado. El sesgo es la media de la predicción menos el valor observado: su signo positivo indica sobreestimación.
+Elegí el modelo por su menor MAE en validación. Frente a la referencia, el modelo redujo el MAE un **30,71 %** en la prueba de verano y aproximadamente un **2,43 %** en la evaluación adicional. La ventaja fue menor en el segundo periodo. El MAE se expresa en registros por centro y día observado. El sesgo es la media de la predicción menos el valor observado: un valor positivo indica sobreestimación.
 
-En prueba he excluido **666 centro-días sin objetivo observado**. La mejora corresponde al bloque temporal evaluado, que incluye verano, y no garantiza el mismo rendimiento en otras estaciones.
+Excluí de las métricas 666 combinaciones de centro y día sin objetivo observado en verano y 49 en la evaluación adicional. Las dos pruebas comparan el modelo con la referencia; para medir la aportación de 2024 repetiría el entrenamiento sin ese año y evaluaría ambos modelos sobre las mismas fechas y observaciones.
+
+Guardé los resultados adicionales en `Datos/modelo/metricas_adicionales.csv`, `predicciones_adicionales.csv` y `auditoria_adicional.csv`. El gráfico de prueba de la versión actual muestra el bloque de verano; la evaluación adicional queda documentada aquí y en el notebook.
 
 ### Predicción en la aplicación
 
-La demostración abarca **01/09/2026–07/09/2026**, con datos hasta el 31 de agosto de 2026. No es una previsión actualizada a la fecha de consulta. Incluye **40 centros elegibles de los 45 del histórico**. Los cinco restantes aparecen con una explicación y sin descarga de previsiones.
+La demostración abarca **01/11/2026–07/11/2026**, con datos hasta el 31 de octubre de 2026. No es una previsión actualizada a la fecha de consulta. Incluye **41 centros elegibles de los 45 del histórico**. Los cuatro restantes aparecen con una explicación y sin descarga de previsiones.
 
-El selector predictivo es independiente de los filtros del análisis histórico. Para cada centro muestro las estimaciones del modelo y de la referencia, la comparación retrospectiva de prueba y las métricas calculadas sobre días observados. No he calculado intervalos de predicción.
+El selector predictivo es independiente de los filtros del análisis histórico. Para cada centro muestro las estimaciones del modelo y de la referencia, la comparación retrospectiva de verano y las métricas calculadas sobre días observados. No he calculado intervalos de predicción.
 
 ## Estructura del proyecto
 
@@ -226,7 +232,7 @@ El objeto `server` está definido como `server = app.server`. Render proporciona
 - No se calcula un porcentaje de ocupación, disponibilidad ni demanda no satisfecha.
 - La ausencia de registros no demuestra cierre ni demanda cero.
 - La cantidad de pistas y la cobertura pueden diferir entre centros y periodos.
-- La evaluación predictiva es condicional a días observados y su prueba final incluye verano; no puede asumirse el mismo rendimiento durante todo el año.
+- La evaluación predictiva es condicional a días observados. Los resultados de verano y del periodo adicional no se extrapolan a todo el año.
 - La publicación mensual limita la actualidad del histórico y no se modela su retraso en esta primera evaluación.
 - Los resultados no se extrapolan a clubes privados.
 
@@ -241,7 +247,9 @@ El objeto `server` está definido como `server = app.server`. Render proporciona
 - [x] Documentación de métricas y del método seleccionado.
 - [x] Integración del modelo y de sus limitaciones en Dash.
 - [x] Publicación del panel predictivo en Render.
-- [ ] Publicar la revisión visual y comprobar la versión final en ordenador y móvil.
+- [x] Ampliar el histórico a 2024–2026 y evaluar ocho semanas adicionales.
+- [x] Publicar la revisión visual.
+- [ ] Comprobar la versión final en ordenador y móvil.
 - [x] Actualizar la documentación y preparar la presentación.
 - [ ] Ensayar la exposición de cinco minutos y las preguntas.
 
@@ -255,7 +263,7 @@ También planteo actualizar el histórico con los meses que publique la fuente y
 
 ## Revisión visual
 
-He preparado una revisión con fondo claro, tipografía uniforme y azul marino como base. Distingo el modelo en azul y la referencia en naranja. El mapa de calor utiliza una escala YlOrRd, de amarillo claro a naranja y rojo oscuro, y permite mostrar las cifras de cada casilla. La escala se ajusta a la selección, por lo que comparo valores numéricos al cambiar de centro o periodo. Esta revisión está pendiente de publicación y comprobación final.
+He preparado una revisión con fondo claro, tipografía uniforme y azul marino como base. Distingo el modelo en azul y la referencia en naranja. El mapa de calor utiliza una escala YlOrRd, de amarillo claro a naranja y rojo oscuro, y permite mostrar las cifras de cada casilla. La escala se ajusta a la selección, por lo que comparo valores numéricos al cambiar de centro o periodo. 
 
 ## Tecnologías y referencias
 
